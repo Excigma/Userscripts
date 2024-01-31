@@ -77,7 +77,7 @@
 					for (const injector of window.bonkCodeInjectors) {
 						try {
 							// Run injector from other userscripts
-							if (typeof injector === "function") code = injector(code);
+							if (typeof injector === "function") code = await injector(code);
 							else {
 								log("Injector was not a function");
 								console.log(injector);
