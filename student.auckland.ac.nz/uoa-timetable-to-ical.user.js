@@ -1,8 +1,9 @@
 // Note: This will NOT work if your timezone is not Pacific/Auckland (e.g. you are overseas). Change your device timezone to Pacific/Auckland
 // **If this script messes up, you WILL need to manually delete the events in the calendar!!!** Use at your own risk.
+// **Please create a new calendar for this in case it does not import correctly. This way you can just delete the calender if this script messes up**
 
 // How to use:
-// 0. Standard cybersecurity warning: Do not blindly run scripts from untrusted sources. Please audit the code before running it. Please also read the above notes.
+// 0. Standard cybersecurity warning: Do not blindly run scripts from untrusted sources. Please audit the code before running it. Please also read the above notes!!
 // 1. Go to: https://www.student.auckland.ac.nz/psc/ps/EMPLOYEE/SA/c/UOA_MENU_FL.UOA_VW_CAL_FL.GBL
 // 2. Open Console (Control + Shift + I, then click on the "Console" tab)
 // 3. Paste the code below into the console. You may need to allow pasting before your browser lets you paste the code.
