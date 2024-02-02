@@ -9,7 +9,6 @@
 		"PRODID",
 		"RRULE",
 		"VCALENDAR",
-		"VEVENT",
-		"yoink"
+		"VEVENT"
 	]
 }
