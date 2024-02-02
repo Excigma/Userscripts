@@ -2,8 +2,6 @@
 // **If this script messes up, you WILL need to manually delete the events in the calendar!!!** Use at your own risk.
 
 // How to use:
-// Don't. The script seems to be functional but I haven't had time to properly test it.
-
 // 0. Standard cybersecurity warning: Do not blindly run scripts from untrusted sources. Please audit the code before running it. Please also read the above notes.
 // 1. Go to: https://www.student.auckland.ac.nz/psc/ps/EMPLOYEE/SA/c/UOA_MENU_FL.UOA_VW_CAL_FL.GBL
 // 2. Open Console (Control + Shift + I, then click on the "Console" tab)
@@ -12,8 +10,6 @@
 
 // Note: I've included a userscript header, however, this script single use, just paste it into the console, there's no point having it installed. I don't believe document-end is enough for the page to finish loading, so the script shouldn't even work.
 // I may convert this into a browser extension to automatically navigate to the correct page if UoA does not release an official solution by the time semester starts.
-
-// TODO: Generate another .ics file to undo the changes made by this script? https://stackoverflow.com/q/1566635
 
 // ==UserScript==
 // @name         UoA SSO Timetable to iCalendar
@@ -209,13 +205,13 @@
 	 * Download a string as a file
 	 * @param {string} content the string content to download
 	 */
-	const downloadFile = (content) => {
+	const downloadFile = (content, filename) => {
 		const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
 
 		a.href = url;
-		a.download = "uoa-sso-calendar.ics";
+		a.download = filename;
 		document.body.appendChild(a);
 
 		a.click();
@@ -289,7 +285,8 @@
 				dtend,
 				location: roomMapping[location] ?? location,
 				rrule: {
-					byDay: DAY_MAP[days.toLowerCase()],
+					// seems to be in UTC or something and causes events to end up in incorrect days if using `days` from SSO
+					// byDay: DAY_MAP[dtstart.toLocaleString('en-US', { weekday: "long" }).toLowerCase()],
 					until
 				}
 			});
@@ -312,9 +309,12 @@
 		"VERSION:2.0",
 		"SUMMARY:UoA SSO Timetable",
 		"PRODID:-//excigma.xyz//UoA SSO Timetable to iCal//EN",
+		"X-WR-RELCALID:-//excigma.xyz//UoA SSO Timetable to iCal//EN",
 		"X-WR-CALNAME:UoA SSO Timetable",
 		`CREATED:${currentDate}`,
-		`LAST-MODIFIED:${currentDate}`
+		`LAST-MODIFIED:${currentDate}`,
+		`SEQUENCE:${Math.floor(Date.now() / 1000)}`,
+		"METHOD:PUBLISH"
 	];
 
 	for (const meeting of aggregateMeetings) {
@@ -326,13 +326,16 @@
 		ical.push(`DTSTART:${toIcalDate(meeting.dtstart)}`);
 		ical.push(`DTEND:${toIcalDate(meeting.dtend)}`);
 		ical.push(`LOCATION:${meeting.location}`);
-		ical.push(`RRULE:FREQ=WEEKLY;BYDAY=${meeting.rrule.byDay};UNTIL=${toIcalDate(meeting.rrule.until)}`);
+		// BYDAY=${meeting.rrule.byDay}; // Excluded because it messes up the days events are on?
+		ical.push(`RRULE:FREQ=WEEKLY;UNTIL=${toIcalDate(meeting.rrule.until)}`);
 		ical.push("END:VEVENT");
 	}
 
 	ical.push("END:VCALENDAR");
 
+	const calendar = ical.join("\r\n");
+
 	console.log(aggregateMeetings);
-	console.log(ical.join("\r\n"));
-	downloadFile(ical.join("\r\n"));
+	console.log(calendar);
+	downloadFile(calendar, "uoa-sso-calendar.ics");
 })();
