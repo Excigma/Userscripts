@@ -26,8 +26,6 @@
 // @run-at       document-end
 // ==/UserScript==
 
-Intentional syntax error to make code not runnable.Further testing required;
-
 (async () => {
 	/** Meeting Information related */
 	// This maps the "Component" field in the timetable to the iCalendar entry
@@ -61,9 +59,10 @@ Intentional syntax error to make code not runnable.Further testing required;
 	const MODAL_CLOSE_ID = "#ICCancel"; // There is a hash is in the ID. This is not a typo
 	const MODAL_IFRAME_SELECTOR = "#pt_modals iframe";
 	const TIMETABLE_ROW_SELECTOR = `[onclick^="javascript:OnRowAction(this,'DERIVED_SSR_FL_SSR_SBJ_CAT_"]`;
+	const TIMETABLE_ROW_LOCATION_SELECTOR = `[id^="DERIVED_REGFRM1_SSR_MTG_LOC"]`;
 
 	const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-	const trimText = (text) => text?.trim()?.replaceAll(/\s+/g, " ");
+	const trimText = (text) => text?.trim()?.replaceAll(/[^\S\r\n]+/g, " ");
 
 	/** iCalender related */
 	const UOA_TIMEZONE = "Pacific/Auckland";
@@ -207,50 +206,6 @@ Intentional syntax error to make code not runnable.Further testing required;
 	}
 
 	/**
-	 * Extract meeting information from the modal's iframe
-	 * @param {Document} modalDocument the document of the modal
-	 * @returns 
-	 */
-	const yoinkInformation = async (modalDocument) => {
-		const meetingCourse = trimText(modalDocument.getElementById(MEETING_NUMBER_ID)?.textContent);
-		const meetingSession = trimText(modalDocument.getElementById(MEETING_SESSION_ID)?.textContent);
-
-		// First two words are the course name, the rest is the description
-		const meetingCourseWords = meetingCourse.split(" ");
-		const courseName = meetingCourseWords.splice(0, 2).join(" ");
-		const description = `${courseName} ${meetingCourseWords.join(" ")}`
-
-		const meetingType = Object.entries(COMPONENT_MAP).find(([key, value]) => meetingSession.toLowerCase().startsWith(key))[1] ?? "";
-		const summary = `${courseName} ${meetingType}`.trim();
-
-		const meetingRows = [...modalDocument.querySelectorAll(MEETING_ROW_SELECTOR)];
-		meetingRows.shift(); // Remove first row. It is the table's header. Why is it in tbody?
-
-		const meetings = [];
-		for (const meetingRow of meetingRows) {
-			const [startEndDate, days, times, location /* instructor*/] = [...meetingRow.children]
-				.map(node => node.textContent.trim());
-			const [startDate, endDate] = startEndDate.split(" - ");
-			const [startTime, endTime] = times.split(" to ");
-
-			const dtstart = parseDateTime(startDate, startTime);
-			const dtend = parseDateTime(startDate, endTime);
-
-			const byDay = DAY_MAP[days.toLowerCase()];
-			// Add one day after the end date to make it inclusive
-			const until = parseDateTime(endDate, endTime);
-			until.setDate(until.getDate() + 1);
-			until.setHours(0, 0, 0);
-
-			const uid = await sha1(`${summary}${dtstart}${dtend}${location}${until}`);
-
-			meetings.push({ uid, summary, description, dtstart, dtend, location, rrule: { byDay, until } });
-		}
-
-		return meetings;
-	}
-
-	/**
 	 * Download a string as a file
 	 * @param {string} content the string content to download
 	 */
@@ -277,14 +232,70 @@ Intentional syntax error to make code not runnable.Further testing required;
 
 	let aggregateMeetings = [];
 	for (const timetableRow of timetableRows) {
+		// Create a map from "405-536 (Engineering Block 5, Room 536)" to "Engineering Block 5, Room 536": "405-536"
+		const roomMapping = {};
+		// .innerText is used as it preserves newlines
+		trimText(timetableRow.querySelector(TIMETABLE_ROW_LOCATION_SELECTOR)?.innerText)
+			.split("\n")
+			.map(line => {
+				const matches = line.match(/(\S+-\S+)\s+\((.*)\)/);
+
+				if (!matches || matches.length !== 3) return;
+				roomMapping[matches[2]] = matches[1];
+			});
+
+		// Click the row to open the modal
 		timetableRow.click();
 
 		// Wait for the modal to load
 		const modalDocument = await awaitModalDocument("OPEN");
 
+		// Ensure the "Meeting Information" tab is selected
 		await ensureTabSelected(modalDocument, COURSE_INFORMATION_TAB_SELECTOR, COURSE_INFORMATION_TAB_TEXT);
-		const meetings = await yoinkInformation(modalDocument);
+		const meetingCourse = trimText(modalDocument.getElementById(MEETING_NUMBER_ID)?.textContent);
+		const meetingSession = trimText(modalDocument.getElementById(MEETING_SESSION_ID)?.textContent);
 
+		// First two words are the course name, the rest is the description
+		const meetingCourseWords = meetingCourse.split(" ");
+		const courseName = meetingCourseWords.splice(0, 2).join(" ");
+		const description = `${courseName} ${meetingCourseWords.join(" ")}`
+
+		const meetingType = Object.entries(COMPONENT_MAP).find(([key, value]) => meetingSession.toLowerCase().startsWith(key))[1] ?? "";
+		const summary = `${courseName} ${meetingType}`.trim();
+
+		const meetingRows = [...modalDocument.querySelectorAll(MEETING_ROW_SELECTOR)];
+		meetingRows.shift(); // Remove first row. It is the table's header. Why is it in tbody?
+
+		const meetings = [];
+		for (const meetingRow of meetingRows) {
+			const [startEndDate, days, times, location /* instructor*/] = [...meetingRow.children]
+				.map(node => trimText(node.textContent));
+			const [startDate, endDate] = startEndDate.split(" - ");
+			const [startTime, endTime] = times.split(" to ");
+
+			const dtstart = parseDateTime(startDate, startTime);
+			const dtend = parseDateTime(startDate, endTime);
+
+			// Add one day after the end date to make it inclusive
+			const until = parseDateTime(endDate, endTime);
+			until.setDate(until.getDate() + 1);
+			until.setHours(0, 0, 0);
+
+			meetings.push({
+				uid: await sha1(`${summary}${dtstart}${dtend}${location}${until}`),
+				summary,
+				description,
+				dtstart,
+				dtend,
+				location: roomMapping[location] ?? location,
+				rrule: {
+					byDay: DAY_MAP[days.toLowerCase()],
+					until
+				}
+			});
+		}
+
+		// Add the meetings to the aggregate
 		aggregateMeetings = [...aggregateMeetings, ...meetings];
 
 		// Close the modal
