@@ -28,142 +28,73 @@
 // ==/UserScript==
 
 (async () => {
+	// Yes, the commenting for each constant is excessive. This is to help remember what each constant is for, as some of the class names on SSO are not very descriptive.
+
 	// Meeting Information related
-	/** This maps the "Component" field in the timetable to the iCalendar entry*/
-	const COMPONENT_MAP = {
+	/** This maps the "Component" field in the timetable to the iCalendar entry like UoACal did */
+	const COMPONENT_MAPPING = {
 		"lecture": "",
 		"tutorial": "TUT",
 		"laboratory": "LAB",
 		"workshop": "WRK"
 	}
+	/** "COMPSYS  305 Digital Systems Design" */
 	const MEETING_NUMBER_ID = "DERIVED_SSR_FL_SSR_SBJ_CAT_NBR";
+	/** "Laboratory  Class 42805" */
 	const MEETING_SESSION_ID = "DERIVED_SSR_FL_SSR_SESSION_TRAN";
-
+	/** Rows in "Meeting Information" tab in Details modal */
 	const MEETING_ROW_SELECTOR = `tbody > tr[id^=DERIVED_SSR_FL]`
 
-	// Timing related
-	/** Polling rate for elements to appear (ms) */
-	const ELEMENT_POLL_RATE = 50;
-	/** Extra delay to add in between steps, in case something has not needed (ms) */
-	const EXTRA_DELAY = 100;
-
-	// Tab related
+	// "Class Information" Tab related
+	/** Class name added to selected tabs in "My Class Timetable": ("List View"/"Weekly Calendar View") and "Class Information": ("Enrolment Information"/"Meeting Information") */
 	const TAB_SELECTED_CLASS = "psc_selected";
-
+	/** "List View"/"Weekly Calendar View" tabs */
 	const TIMETABLE_VIEW_TAB_SELECTOR = `.ps_box-label [for^="UOA_MYCAL_WRK_SSR_SCHED_FORMAT"]`
-	const TIMETABLE_VIEW_TAB_TEXT = "List View";
-
+	const TIMETABLE_VIEW_TAB_TEXT = "List View"; // The text in the tab we want to select
+	/** "Enrolment Information"/"Meeting Information" tabs */
 	const COURSE_INFORMATION_TAB_SELECTOR = `.ps_box-label [for^="DERIVED_SSR_FL_SSR_CL_DTLS_LFF"]`
-	const COURSE_INFORMATION_TAB_TEXT = "Meeting Information";
+	const COURSE_INFORMATION_TAB_TEXT = "Meeting Information"; // The text in the tab we want to select
 
 	// Miscellaneous IDs and selectors
+	/** ID of the loading spinner which shows up when loading (e.g. opening modals) */
 	const SPINNER_ID = "WAIT_win0";
-	const MODAL_CLOSE_ID = "#ICCancel"; // There is a hash is in the ID. This is not a typo
+	/** ID of the button used to close modals. */
+	const MODAL_CLOSE_ID = "#ICCancel"; // There is a `#` in the ID. This is not a typo
+	/** Selector of opened modal's <iframe> element */
 	const MODAL_IFRAME_SELECTOR = "#pt_modals iframe";
+	/** Selector of rows for each class in "List View" */
 	const TIMETABLE_ROW_SELECTOR = `[onclick^="javascript:OnRowAction(this,'DERIVED_SSR_FL_SSR_SBJ_CAT_"]`;
+	/** Selector of Location ("260-115 (Owen G Glenn, Room 115)") for each class in "List View". Used to map "Owen G Glenn, Room 115" to "260-115" */
 	const TIMETABLE_ROW_LOCATION_SELECTOR = `[id^="DERIVED_REGFRM1_SSR_MTG_LOC"]`;
 
-	const UOA_TIMEZONE = "Pacific/Auckland";
+	// Other stuff
+	/** Polling rate for elements to appear (ms) */
+	const ELEMENT_POLL_RATE = 50;
 
-	// Pre-flight checks
+	// Helper functions
+	/** Converts a javascript Date object into an iCal date-time string in the format of `YYYYMMDDTHHMMSSZ` */
+	const toIcalDate = (date) => date.toISOString().replace(/[:\-]/g, '').split('.')[0] + 'Z';
+	/** Removes duplicate whitespace in between and at ends of words */
+	const trimText = (text) => (text?.textContent ?? text)?.trim()?.replaceAll(/[^\S\r\n]+/g, " ");
+
+
+
+
+	// Timezone pre-flight check
+	const UOA_TIMEZONE = "Pacific/Auckland";
 	const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 	if (userTimeZone !== UOA_TIMEZONE) {
 		console.error(`Your timezone is not ${UOA_TIMEZONE}. You may need to adjust the times in the calendar.`);
 		return;
 	}
 
-	const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-	const toIcalDate = (date) => date.toISOString().replace(/[:\-]/g, '').split('.')[0] + 'Z';
-	const trimText = (text) => (text?.textContent ?? text)?.trim()?.replaceAll(/[^\S\r\n]+/g, " ");
-
-
-
-
-	// Ensure the "List View" tab is selected
+	// Ensure that the "List View" tab is selected
 	await ensureTabSelected(document, TIMETABLE_VIEW_TAB_SELECTOR, TIMETABLE_VIEW_TAB_TEXT);
-
-	// Fetch the rows of classes inside the List View
-	const timetableRows = document.querySelectorAll(TIMETABLE_ROW_SELECTOR);
-
-	let aggregateMeetings = [];
-	for (const timetableRow of timetableRows) {
-		// Create a map from "405-536 (Engineering Block 5, Room 536)" to "Engineering Block 5, Room 536": "405-536"
-		const roomMapping = {};
-		// .innerText is used as it preserves newlines
-		trimText(timetableRow.querySelector(TIMETABLE_ROW_LOCATION_SELECTOR)?.innerText)
-			.split("\n")
-			.map(line => {
-				const matches = line.match(/(\S+-\S+)\s+\((.*)\)/);
-
-				if (!matches || matches.length !== 3) return;
-				roomMapping[matches[2]] = matches[1];
-			});
-
-		// Click the row to open the modal
-		timetableRow.click();
-
-		// Wait for the modal to load
-		const modalDocument = await awaitModalDocument("OPEN");
-
-		// Ensure the "Meeting Information" tab is selected
-		await ensureTabSelected(modalDocument, COURSE_INFORMATION_TAB_SELECTOR, COURSE_INFORMATION_TAB_TEXT);
-		const meetingCourse = trimText(modalDocument.getElementById(MEETING_NUMBER_ID));
-		const meetingSession = trimText(modalDocument.getElementById(MEETING_SESSION_ID));
-
-		// First two words are the course name, the rest is the description
-		const meetingCourseWords = meetingCourse.split(" ");
-		const courseName = meetingCourseWords.splice(0, 2).join(" ");
-		const description = `${courseName} ${meetingCourseWords.join(" ")}`;
-
-		const meetingTypeRaw = trimText(meetingSession.toLowerCase().split("class")?.[0]);
-		const meetingType = COMPONENT_MAP[meetingTypeRaw] ?? meetingTypeRaw ?? "";
-		const summary = `${courseName} ${meetingType}`.trim();
-
-		const meetingRows = [...modalDocument.querySelectorAll(MEETING_ROW_SELECTOR)];
-		meetingRows.shift(); // Remove first row. It is the table's header. Why is it in tbody?
-
-		const meetings = [];
-		for (const meetingRow of meetingRows) {
-			const [startEndDate, days, times, location /* instructor*/] = [...meetingRow.children].map(trimText);
-			const [startDate, endDate] = startEndDate.split(" - ");
-			const [startTime, endTime] = times.split(" to ");
-
-			const dtstart = parseDateTime(startDate, startTime);
-			const dtend = parseDateTime(startDate, endTime);
-
-			// Add one day after the end date to make it inclusive
-			const until = parseDateTime(endDate, endTime);
-			until.setDate(until.getDate() + 1);
-			until.setHours(0, 0, 0);
-
-			meetings.push({
-				uid: await sha1(`${summary}${dtstart}${dtend}${location}${until}`),
-				summary,
-				description,
-				dtstart,
-				dtend,
-				location: roomMapping[location] ?? location,
-				rrule: {
-					// seems to be in UTC or something and causes events to end up in incorrect days if using `days` from SSO
-					// byDay: DAY_MAP[dtstart.toLocaleString('en-US', { weekday: "long" }).toLowerCase()],
-					until
-				}
-			});
-		}
-
-		// Add the meetings to the aggregate
-		aggregateMeetings = [...aggregateMeetings, ...meetings];
-
-		// Close the modal
-		modalDocument.getElementById(MODAL_CLOSE_ID).click();
-		await awaitModalDocument("CLOSE");
-	}
-
-	const currentDate = toIcalDate(new Date());
 
 	// iCalendar file as array of lines
 	// NOTE: I have no idea what I doing, it might be wrong, lol
-	const ical = [
+	const currentDate = toIcalDate(new Date());
+	const iCalendar = [
 		"BEGIN:VCALENDAR",
 		"VERSION:2.0",
 		"SUMMARY:UoA SSO Timetable",
@@ -176,34 +107,96 @@
 		"METHOD:PUBLISH"
 	];
 
-	for (const meeting of aggregateMeetings) {
-		ical.push("BEGIN:VEVENT");
-		ical.push(`UID:${meeting.uid}`);
-		ical.push(`SUMMARY:${meeting.summary}`);
-		ical.push(`DESCRIPTION:${meeting.description}`);
-		ical.push(`DTSTAMP:${currentDate}`);
-		ical.push(`DTSTART:${toIcalDate(meeting.dtstart)}`);
-		ical.push(`DTEND:${toIcalDate(meeting.dtend)}`);
-		ical.push(`LOCATION:${meeting.location}`);
-		// BYDAY=${meeting.rrule.byDay}; // Excluded because it messes up the days events are on?
-		ical.push(`RRULE:FREQ=WEEKLY;UNTIL=${toIcalDate(meeting.rrule.until)}`);
-		ical.push("END:VEVENT");
+	// Loop through each "Class" in the "List View" timetable
+	for (const timetableRow of document.querySelectorAll(TIMETABLE_ROW_SELECTOR)) {
+		// Create a map from "405-536 (Engineering Block 5, Room 536)" to "Engineering Block 5, Room 536": "405-536"
+		const roomMapping = {};
+		// .innerText is used as it preserves newlines
+		trimText(timetableRow.querySelector(TIMETABLE_ROW_LOCATION_SELECTOR)?.innerText)
+			.split("\n")
+			.map(line => {
+				const matches = line.match(/(\S+-\S+)\s+\((.*)\)/);
+
+				if (!matches || matches.length !== 3) return;
+				roomMapping[matches[2]] = matches[1];
+			});
+
+		// Open the modal, wait for it to load and fetch the document to be able to interact with content inside the it
+		timetableRow.click();
+		const modalDocument = await awaitModalDocument("OPEN");
+
+		// Ensure the "Meeting Information" tab is selected
+		await ensureTabSelected(modalDocument, COURSE_INFORMATION_TAB_SELECTOR, COURSE_INFORMATION_TAB_TEXT);
+		// Fetch course name, e.g. "COMPSYS 305 Digital Systems Design"
+		const meetingCourse = trimText(modalDocument.getElementById(MEETING_NUMBER_ID));
+		// Fetch meeting type, e.g. "Laboratory Class 42805"
+		const meetingSession = trimText(modalDocument.getElementById(MEETING_SESSION_ID));
+
+		// First two words are the course name ("COMPSYS 305"), the rest is the description of the course ("Digital Systems Design")
+		const meetingCourseWords = meetingCourse.split(" ");
+		const courseName = meetingCourseWords.splice(0, 2).join(" ");
+		const description = `${courseName} ${meetingCourseWords.join(" ")}`;
+
+		// "Laboratory" is the meeting type, "Class 42805" is the meeting number
+		const meetingTypeRaw = trimText(meetingSession.toLowerCase().split("class")?.[0]);
+		const meetingType = COMPONENT_MAPPING[meetingTypeRaw] ?? meetingTypeRaw ?? "";
+		const summary = `${courseName} ${meetingType}`.trim();
+
+		// Loop through each meeting in the "Meeting Information" modal
+		const meetingRows = [...modalDocument.querySelectorAll(MEETING_ROW_SELECTOR)];
+		meetingRows.shift(); // Remove first row. It is the table's header. Why is it in tbody?
+
+		for (const meetingRow of meetingRows) {
+			const [
+				startEndDate, // "27/02/2024 - 26/03/2024"
+				_days, // "Tuesday"
+				times, // "12:00PM to 2:00PM"
+				location, // "Engineering Block 5, Room 536"
+				_instructors // "To be Announced"
+			] = [...meetingRow.children].map(trimText);
+			const [startDate, endDate] = startEndDate.split(" - "); // ["27/02/2024", "26/03/2024"]
+			const [startTime, endTime] = times.split(" to "); // ["12:00PM", "2:00PM"]
+
+			const dtstart = parseDateTime(startDate, startTime); // Start of first meeting
+			const dtend = parseDateTime(startDate, endTime); // End of first meeting
+
+			// TODO: Is this actually required?
+			// Add one day after the end date to make it inclusive
+			const until = parseDateTime(endDate, endTime);
+			until.setDate(until.getDate() + 1);
+			until.setHours(0, 0, 0);
+
+			// https://icalendar.org/
+			iCalendar.push(...[
+				"BEGIN:VEVENT",
+				`UID:${await sha1(`${summary}${dtstart}${dtend}${location}${until}`)}`,
+				`SUMMARY:${summary}`,
+				`DESCRIPTION:${description}`,
+				`DTSTAMP:${currentDate}`,
+				`DTSTART:${toIcalDate(dtstart)}`,
+				`DTEND:${toIcalDate(dtend)}`,
+				`LOCATION:${roomMapping[location] ?? location}`,
+				// BYDAY=${meeting.rrule.byDay}; // Excluded because it messes up the days events are on?
+				`RRULE:FREQ=WEEKLY;UNTIL=${toIcalDate(until)}`,
+				"END:VEVENT"
+			])
+		}
+
+		// Close the modal
+		modalDocument.getElementById(MODAL_CLOSE_ID).click();
+		await awaitModalDocument("CLOSE");
 	}
 
-	ical.push("END:VCALENDAR");
+	iCalendar.push("END:VCALENDAR");
 
-	const calendar = ical.join("\r\n");
-
-	console.log(aggregateMeetings);
+	const calendar = iCalendar.join("\r\n");
 	console.log(calendar);
-
 	downloadFile(calendar, "uoa-sso-calendar.ics");
 
 
 
 
 	// Helper functions
-
 	/**
 	 * Wait for the spinner to close on the current document.
 	 * Fun fact: THE MODALS ARE IN IFRAMES??? This means that we need to hook into <iframe>s to check the spinner's status as well
@@ -216,8 +209,6 @@
 				// Detect when the spinner is hidden
 				if (thisDocument.getElementById(SPINNER_ID)?.style?.visibility !== "visible") {
 					clearInterval(spinnerInterval);
-
-					await delay(EXTRA_DELAY);
 					resolve();
 				}
 			}, ELEMENT_POLL_RATE);
@@ -237,18 +228,15 @@
 			// Using a MutationObserver is more ideal here, but this works well, so I don't want to change it.
 			const modalInterval = setInterval(async () => {
 				const modalDocument = document.querySelector(MODAL_IFRAME_SELECTOR)?.contentDocument;
-				// We have enum at home
 				if (action === "OPEN") {
 					// Detect when the `<iframe>` is added to the page
 					if (modalDocument?.getElementById) {
 						clearInterval(modalInterval);
 
-						// Detect when the `<iframe>` has `DOMContentLoaded`. The reason we don't use DOMContentLoaded is because it fires once and we may add it too late if SSO is fast (highly unlikely).
+						// Detect when the `<iframe>` modal has its HTML loaded.
 						const modalDocumentInterval = setInterval(async () => {
 							if (modalDocument.getElementById(MODAL_CLOSE_ID)) {
 								clearInterval(modalDocumentInterval);
-
-								await delay(EXTRA_DELAY);
 								resolve(modalDocument);
 							}
 						}, ELEMENT_POLL_RATE);
@@ -257,8 +245,6 @@
 					// Wait for the modal's `<iframe>` to no longer exist
 					if (!modalDocument) {
 						clearInterval(modalInterval);
-
-						await delay(EXTRA_DELAY);
 						resolve(modalDocument);
 					}
 				}
