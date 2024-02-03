@@ -28,8 +28,8 @@
 // ==/UserScript==
 
 (async () => {
-	/** Meeting Information related */
-	// This maps the "Component" field in the timetable to the iCalendar entry
+	// Meeting Information related
+	/** This maps the "Component" field in the timetable to the iCalendar entry*/
 	const COMPONENT_MAP = {
 		"lecture": "",
 		"tutorial": "TUT",
@@ -41,13 +41,13 @@
 
 	const MEETING_ROW_SELECTOR = `tbody > tr[id^=DERIVED_SSR_FL]`
 
-	/** Timing related */
-	// Polling rate for elements to appear (ms)
+	// Timing related
+	/** Polling rate for elements to appear (ms) */
 	const ELEMENT_POLL_RATE = 50;
-	// Extra delay to add in between steps, in case something has not needed (ms)
-	const EXTRA_DELAY = 150;
+	/** Extra delay to add in between steps, in case something has not needed (ms) */
+	const EXTRA_DELAY = 100;
 
-	/** Tab related */
+	// Tab related
 	const TAB_SELECTED_CLASS = "psc_selected";
 
 	const TIMETABLE_VIEW_TAB_SELECTOR = `.ps_box-label [for^="UOA_MYCAL_WRK_SSR_SCHED_FORMAT"]`
@@ -56,27 +56,14 @@
 	const COURSE_INFORMATION_TAB_SELECTOR = `.ps_box-label [for^="DERIVED_SSR_FL_SSR_CL_DTLS_LFF"]`
 	const COURSE_INFORMATION_TAB_TEXT = "Meeting Information";
 
-	/** Miscellaneous IDs and selectors */
+	// Miscellaneous IDs and selectors
 	const SPINNER_ID = "WAIT_win0";
 	const MODAL_CLOSE_ID = "#ICCancel"; // There is a hash is in the ID. This is not a typo
 	const MODAL_IFRAME_SELECTOR = "#pt_modals iframe";
 	const TIMETABLE_ROW_SELECTOR = `[onclick^="javascript:OnRowAction(this,'DERIVED_SSR_FL_SSR_SBJ_CAT_"]`;
 	const TIMETABLE_ROW_LOCATION_SELECTOR = `[id^="DERIVED_REGFRM1_SSR_MTG_LOC"]`;
 
-	const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-	const trimText = (text) => (text?.textContent ?? text)?.trim()?.replaceAll(/[^\S\r\n]+/g, " ");
-
-	/** iCalender related */
 	const UOA_TIMEZONE = "Pacific/Auckland";
-	const DAY_MAP = {
-		"monday": "MO",
-		"tuesday": "TU",
-		"wednesday": "WE",
-		"thursday": "TH",
-		"friday": "FR",
-		"saturday": "SA",
-		"sunday": "SU"
-	}
 
 	// Pre-flight checks
 	const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -85,147 +72,12 @@
 		return;
 	}
 
-	/**
-	 * Wait for the spinner to close on the current document.
-	 * Fun fact: THE MODALS ARE IN IFRAMES??? This means that we need to hook into <iframe>s to check the spinner's status as well
-	 * @param {Document} thisDocument
-	 */
-	const awaitSpinnerClose = (thisDocument) => new Promise((resolve) => {
-		// Using a MutationObserver is more ideal here, but this works well, so I don't want to change it.
-		const spinnerInterval = setInterval(async () => {
-			// Detect when the spinner is hidden
-			if (thisDocument.getElementById(SPINNER_ID)?.style?.visibility !== "visible") {
-				clearInterval(spinnerInterval);
+	const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+	const toIcalDate = (date) => date.toISOString().replace(/[:\-]/g, '').split('.')[0] + 'Z';
+	const trimText = (text) => (text?.textContent ?? text)?.trim()?.replaceAll(/[^\S\r\n]+/g, " ");
 
-				await delay(EXTRA_DELAY);
-				resolve();
-			}
-		}, ELEMENT_POLL_RATE);
-	});
 
-	/**
-	 * Detects when a modal has finished opening or closing
-	 * @param {"OPEN" | "CLOSE"} action which action should we wait for
-	 * @returns the iframe document if opening, nothing if closing
-	 */
-	const awaitModalDocument = (action) => new Promise(async (resolve) => {
-		// Wait for the spinner to close if it exists
-		await awaitSpinnerClose(document);
 
-		// Using a MutationObserver is more ideal here, but this works well, so I don't want to change it.
-		const modalInterval = setInterval(async () => {
-			const modalDocument = document.querySelector(MODAL_IFRAME_SELECTOR)?.contentDocument;
-			// We have enum at home
-			if (action === "OPEN") {
-				// Detect when the `<iframe>` is added to the page
-				if (modalDocument?.getElementById) {
-					clearInterval(modalInterval);
-
-					// Detect when the `<iframe>` has `DOMContentLoaded`. The reason we don't use DOMContentLoaded is because it fires once and we may add it too late if SSO is fast (highly unlikely).
-					const modalDocumentInterval = setInterval(async () => {
-						if (modalDocument.getElementById(MODAL_CLOSE_ID)) {
-							clearInterval(modalDocumentInterval);
-
-							await delay(EXTRA_DELAY);
-							resolve(modalDocument);
-						}
-					}, ELEMENT_POLL_RATE);
-				}
-			} else if (action === "CLOSE") {
-				// Wait for the modal's `<iframe>` to no longer exist
-				if (!modalDocument) {
-					clearInterval(modalInterval);
-
-					await delay(EXTRA_DELAY);
-					resolve(modalDocument);
-				}
-			}
-		}, ELEMENT_POLL_RATE);
-	});
-
-	/**
-	 * Ensure that a tab with certain text has been selected
-	 * @param {Document} thisDocument the document to check the tabs in
-	 * @param {string} tabSelector the selector of the tabs to ensure is selected
-	 * @param {string} tabText the text of the tab to ensure is selected
-	 */
-	const ensureTabSelected = async (thisDocument, tabSelector, tabText) => {
-		const wantedTab = [...thisDocument.querySelectorAll(tabSelector)]
-			.find(tab => trimText(tab).toLowerCase() === trimText(tabText).toLowerCase())
-			?.parentElement?.parentElement;
-
-		if (!wantedTab) {
-			throw new Error(`Cannot find tab with text "${tabText}" in selector "${tabSelector}"`);
-		}
-
-		// If the tab is already selected, we don't need to do anything
-		if (wantedTab.classList.contains(TAB_SELECTED_CLASS)) return;
-
-		// Click the tab to select it
-		wantedTab.querySelector("input")?.click();
-		await awaitSpinnerClose(thisDocument);
-	}
-
-	/**
-	 * Parse a date and time string into a `Date` object
-	 * @param {string} date the date string in the format "DD/MM/YYYY"
-	 * @param {string} time the time string in the format "HH:MMAM/PM"
-	*/
-	const parseDateTime = (date, time) => {
-		const [day, month, year] = date.split("/").map(Number);
-		const [timePart, meridiem] = time.split(/(?=[AP]M)/i);
-		let [hours, minutes] = timePart.split(":").map(Number);
-
-		// Note: month - 1 because month is zero-indexed in JavaScript
-		const parsedDate = new Date(year, month - 1, day);
-		if (meridiem.toLowerCase() === "pm" && hours < 12) {
-			hours += 12;
-		} else if (meridiem.toLowerCase() === "am" && hours === 12) {
-			hours = 0;
-		}
-
-		parsedDate.setHours(hours, minutes);
-
-		return parsedDate;
-	};
-
-	/**
-	 * Convert a `Date` object into a UTC iCalendar date string
-	 * @param {Date} date the date to convert
-	 * @returns {string} the iCalendar date string
-	 */
-	const toIcalDate = (date) => {
-		return date.toISOString().replace(/[:\-]/g, '').split('.')[0] + 'Z';
-	}
-
-	/**
-	 * Generate a SHA-1 hash of a string
-	 * @param {string} text the text to hash
-	 * @returns {Promise<string>} the SHA-1 hash, as a base16 string
-	 */
-	const sha1 = async (text) => {
-		const digest = await crypto.subtle.digest("SHA-1", (new TextEncoder()).encode(text));
-		return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join("");
-	}
-
-	/**
-	 * Download a string as a file
-	 * @param {string} content the string content to download
-	 */
-	const downloadFile = (content, filename) => {
-		const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-
-		a.href = url;
-		a.download = filename;
-		document.body.appendChild(a);
-
-		a.click();
-
-		document.body.removeChild(a);
-		URL.revokeObjectURL(url);
-	};
 
 	// Ensure the "List View" tab is selected
 	await ensureTabSelected(document, TIMETABLE_VIEW_TAB_SELECTOR, TIMETABLE_VIEW_TAB_TEXT);
@@ -344,5 +196,148 @@
 
 	console.log(aggregateMeetings);
 	console.log(calendar);
+
 	downloadFile(calendar, "uoa-sso-calendar.ics");
+
+
+
+
+	// Helper functions
+
+	/**
+	 * Wait for the spinner to close on the current document.
+	 * Fun fact: THE MODALS ARE IN IFRAMES??? This means that we need to hook into <iframe>s to check the spinner's status as well
+	 * @param {Document} thisDocument
+	 */
+	function awaitSpinnerClose(thisDocument) {
+		return new Promise((resolve) => {
+			// Using a MutationObserver is more ideal here, but this works well, so I don't want to change it.
+			const spinnerInterval = setInterval(async () => {
+				// Detect when the spinner is hidden
+				if (thisDocument.getElementById(SPINNER_ID)?.style?.visibility !== "visible") {
+					clearInterval(spinnerInterval);
+
+					await delay(EXTRA_DELAY);
+					resolve();
+				}
+			}, ELEMENT_POLL_RATE);
+		});
+	}
+
+	/**
+	 * Detects when a modal has finished opening or closing
+	 * @param {"OPEN" | "CLOSE"} action which action should we wait for
+	 * @returns the iframe document if opening, nothing if closing
+	 */
+	function awaitModalDocument(action) {
+		return new Promise(async (resolve) => {
+			// Wait for the spinner to close if it exists
+			await awaitSpinnerClose(document);
+
+			// Using a MutationObserver is more ideal here, but this works well, so I don't want to change it.
+			const modalInterval = setInterval(async () => {
+				const modalDocument = document.querySelector(MODAL_IFRAME_SELECTOR)?.contentDocument;
+				// We have enum at home
+				if (action === "OPEN") {
+					// Detect when the `<iframe>` is added to the page
+					if (modalDocument?.getElementById) {
+						clearInterval(modalInterval);
+
+						// Detect when the `<iframe>` has `DOMContentLoaded`. The reason we don't use DOMContentLoaded is because it fires once and we may add it too late if SSO is fast (highly unlikely).
+						const modalDocumentInterval = setInterval(async () => {
+							if (modalDocument.getElementById(MODAL_CLOSE_ID)) {
+								clearInterval(modalDocumentInterval);
+
+								await delay(EXTRA_DELAY);
+								resolve(modalDocument);
+							}
+						}, ELEMENT_POLL_RATE);
+					}
+				} else if (action === "CLOSE") {
+					// Wait for the modal's `<iframe>` to no longer exist
+					if (!modalDocument) {
+						clearInterval(modalInterval);
+
+						await delay(EXTRA_DELAY);
+						resolve(modalDocument);
+					}
+				}
+			}, ELEMENT_POLL_RATE);
+		});
+	}
+
+	/**
+	 * Ensure that a tab with certain text has been selected
+	 * @param {Document} thisDocument the document to check the tabs in
+	 * @param {string} tabSelector the selector of the tabs to ensure is selected
+	 * @param {string} tabText the text of the tab to ensure is selected
+	 */
+	async function ensureTabSelected(thisDocument, tabSelector, tabText) {
+		const wantedTab = [...thisDocument.querySelectorAll(tabSelector)]
+			.find(tab => trimText(tab).toLowerCase() === trimText(tabText).toLowerCase())
+			?.parentElement?.parentElement;
+
+		if (!wantedTab) {
+			throw new Error(`Cannot find tab with text "${tabText}" in selector "${tabSelector}"`);
+		}
+
+		// If the tab is already selected, we don't need to do anything
+		if (wantedTab.classList.contains(TAB_SELECTED_CLASS)) return;
+
+		// Click the tab to select it
+		wantedTab.querySelector("input")?.click();
+		await awaitSpinnerClose(thisDocument);
+	}
+
+	/**
+	 * Parse a date and time string into a `Date` object
+	 * @param {string} date the date string in the format "DD/MM/YYYY"
+	 * @param {string} time the time string in the format "HH:MMAM/PM"
+	*/
+	function parseDateTime(date, time) {
+		const [day, month, year] = date.split("/").map(Number);
+		const [timePart, meridiem] = time.split(/(?=[AP]M)/i);
+		let [hours, minutes] = timePart.split(":").map(Number);
+
+		// Note: month - 1 because month is zero-indexed in JavaScript
+		const parsedDate = new Date(year, month - 1, day);
+		if (meridiem.toLowerCase() === "pm" && hours < 12) {
+			hours += 12;
+		} else if (meridiem.toLowerCase() === "am" && hours === 12) {
+			hours = 0;
+		}
+
+		parsedDate.setHours(hours, minutes);
+
+		return parsedDate;
+	};
+
+	/**
+	 * Generate a SHA-1 hash of a string
+	 * @param {string} text the text to hash
+	 * @returns {Promise<string>} the SHA-1 hash, as a base16 string
+	 */
+	async function sha1(text) {
+		const digest = await crypto.subtle.digest("SHA-1", (new TextEncoder()).encode(text));
+		return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join("");
+	}
+
+	/**
+	 * Download a string as a file
+	 * @param {string} content the string content to download
+	 */
+	function downloadFile(content, filename) {
+		const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+
+		a.href = url;
+		a.download = filename;
+		document.body.appendChild(a);
+
+		a.click();
+
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+	};
 })();
