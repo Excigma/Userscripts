@@ -1,6 +1,6 @@
 // Note: This will NOT work if your timezone is not Pacific/Auckland (e.g. you are overseas). Change your device timezone to Pacific/Auckland
 // **If this script messes up, you WILL need to manually delete the events in the calendar!!!** Use at your own risk.
-// **Please create a new calendar for this in case it does not import correctly. This way you can just delete the calendar if this script messes up**
+// **Please create a new calendar for this, in case it does not import correctly. That way, you can just delete the calendar if this script messes up**
 
 // How to use:
 // 0. Standard cybersecurity warning: Do not blindly run scripts from untrusted sources. Please audit the code before running it. Please also read the above notes!!
@@ -9,8 +9,9 @@
 // 3. Paste the code below into the console. You may need to allow pasting before your browser lets you paste the code.
 // 4. Press Enter. You should see the script switching to the "List View" tab, opening "Meeting Information" for each meeting then finally downloading a file "uoa-sso-calendar.ics". The ics file's contents will be logged to the console as well.
 
-// Note: I've included a userscript header, however, this script single use, just paste it into the console, there's no point having it installed. I don't believe document-end is enough for the page to finish loading, so the script shouldn't even work.
+// Note: I've included a userscript header, however, this script is single use, just paste it into the console, there's no point having it installed. I don't believe document-end is enough for the page to finish loading, so the script shouldn't even work.
 // I may convert this into a browser extension to automatically navigate to the correct page if UoA does not release an official solution by the time semester starts.
+
 
 // ==UserScript==
 // @name         UoA SSO Timetable to iCalendar
@@ -29,7 +30,8 @@
 	const COMPONENT_MAP = {
 		"lecture": "",
 		"tutorial": "TUT",
-		"laboratory": "LAB"
+		"laboratory": "LAB",
+		"workshop": "WRK"
 	}
 	const MEETING_NUMBER_ID = "DERIVED_SSR_FL_SSR_SBJ_CAT_NBR";
 	const MEETING_SESSION_ID = "DERIVED_SSR_FL_SSR_SESSION_TRAN";
@@ -59,7 +61,7 @@
 	const TIMETABLE_ROW_LOCATION_SELECTOR = `[id^="DERIVED_REGFRM1_SSR_MTG_LOC"]`;
 
 	const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-	const trimText = (text) => text?.trim()?.replaceAll(/[^\S\r\n]+/g, " ");
+	const trimText = (text) => (text?.textContent ?? text)?.trim()?.replaceAll(/[^\S\r\n]+/g, " ");
 
 	/** iCalender related */
 	const UOA_TIMEZONE = "Pacific/Auckland";
@@ -77,6 +79,7 @@
 	const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 	if (userTimeZone !== UOA_TIMEZONE) {
 		console.error(`Your timezone is not ${UOA_TIMEZONE}. You may need to adjust the times in the calendar.`);
+		return;
 	}
 
 	/**
@@ -145,7 +148,7 @@
 	 */
 	const ensureTabSelected = async (thisDocument, tabSelector, tabText) => {
 		const wantedTab = [...thisDocument.querySelectorAll(tabSelector)]
-			.find(tab => trimText(tab.textContent).toLowerCase() === trimText(tabText).toLowerCase())
+			.find(tab => trimText(tab).toLowerCase() === trimText(tabText).toLowerCase())
 			?.parentElement?.parentElement;
 
 		if (!wantedTab) {
@@ -249,15 +252,16 @@
 
 		// Ensure the "Meeting Information" tab is selected
 		await ensureTabSelected(modalDocument, COURSE_INFORMATION_TAB_SELECTOR, COURSE_INFORMATION_TAB_TEXT);
-		const meetingCourse = trimText(modalDocument.getElementById(MEETING_NUMBER_ID)?.textContent);
-		const meetingSession = trimText(modalDocument.getElementById(MEETING_SESSION_ID)?.textContent);
+		const meetingCourse = trimText(modalDocument.getElementById(MEETING_NUMBER_ID));
+		const meetingSession = trimText(modalDocument.getElementById(MEETING_SESSION_ID));
 
 		// First two words are the course name, the rest is the description
 		const meetingCourseWords = meetingCourse.split(" ");
 		const courseName = meetingCourseWords.splice(0, 2).join(" ");
-		const description = `${courseName} ${meetingCourseWords.join(" ")}`
+		const description = `${courseName} ${meetingCourseWords.join(" ")}`;
 
-		const meetingType = Object.entries(COMPONENT_MAP).find(([key, value]) => meetingSession.toLowerCase().startsWith(key))[1] ?? "";
+		const meetingTypeRaw = trimText(meetingSession.toLowerCase().split("class")?.[0]);
+		const meetingType = COMPONENT_MAP[meetingTypeRaw] ?? meetingTypeRaw ?? "";
 		const summary = `${courseName} ${meetingType}`.trim();
 
 		const meetingRows = [...modalDocument.querySelectorAll(MEETING_ROW_SELECTOR)];
@@ -265,8 +269,7 @@
 
 		const meetings = [];
 		for (const meetingRow of meetingRows) {
-			const [startEndDate, days, times, location /* instructor*/] = [...meetingRow.children]
-				.map(node => trimText(node.textContent));
+			const [startEndDate, days, times, location /* instructor*/] = [...meetingRow.children].map(trimText);
 			const [startDate, endDate] = startEndDate.split(" - ");
 			const [startTime, endTime] = times.split(" to ");
 
