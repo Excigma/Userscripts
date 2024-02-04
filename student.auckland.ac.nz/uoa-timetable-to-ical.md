@@ -8,7 +8,7 @@ This script fetches data from the timetable on SSO (Student Services Online) and
 
 ## Usage
 
-> [!IMPORTANT]
+> [!WARNING]
 > ### ⚠️ **Create a new calendar in your calendar application separate from your main calendar.**
 > 
 > **This script works differently to UoACal**. The link UoACal gives subscribes you to a seperate calendar, the whole calendar is easily removable.
@@ -24,7 +24,7 @@ This script fetches data from the timetable on SSO (Student Services Online) and
 > 
 > Use at your own risk. Verify the calendar is correct before confirming the import into your calendar application.
 
-0. Please read the `Important` block above
+0. Please read the `Important` block above. This will NOT work if your timezone is not `Pacific/Auckland` (e.g., you are overseas). Change your device timezone to `Pacific/Auckland`
 1. Go to the ["My Class Timetable" page on SSO](https://www.student.auckland.ac.nz/psc/ps/EMPLOYEE/SA/c/UOA_MENU_FL.UOA_VW_CAL_FL.GBL)
 2. Open the JavaScript Console:
    - On Google Chrome/Microsoft Edge/Mozilla Firefox: `ctrl` + `shift` + `I`, then click on the `[Console]` tab at the top
@@ -36,10 +36,10 @@ This script fetches data from the timetable on SSO (Student Services Online) and
 3. Copy the code from  [uoa-timetable-to-ical.js](https://github.com/Excigma/Userscripts/blob/trunk/student.auckland.ac.nz/uoa-timetable-to-ical.js)
 4. Paste the code into the console. You may need to allow pasting before your browser allows you to paste code into the console
 5. Press Enter to run the code. You should see the script switching to the "List View" tab, opening "Meeting Information" for each meeting, and finally downloading a file: `uoa-sso-calendar.ics`. The `.ics` file's contents will be logged to the console as well
-6. Note: Importing events from `.ics` files might be a **difficult to reverse action** depending on your calendar application. Read the `Important` block above before importing the `.ics` file. The calendar will not update if your timetable changes. **Events may show up even on public holidays.**
+6. Note: Importing events from `.ics` files might be a **difficult to reverse action** depending on your calendar application. Read the `Important` block above before importing the `.ics` file.
 
-> [!NOTE]
-> This will NOT work if your timezone is not `Pacific/Auckland` (e.g., you are overseas). Change your device timezone to `Pacific/Auckland`
+> [!IMPORTANT]
+> **The calendar will not update if your timetable changes. Events may show up even on public holidays when classes are not running.**
 
  ## Steps to create a new calendar in your calendar application
  ### Google Calendar
