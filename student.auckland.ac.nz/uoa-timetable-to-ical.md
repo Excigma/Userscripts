@@ -41,7 +41,7 @@ This script fetches data from the timetable on SSO (Student Services Online) and
 6. Note: Importing events from `.ics` files might be a **difficult to reverse action** depending on your calendar application. Read the `Important` block above before importing the `.ics` file.
 
 > [!IMPORTANT]
-> **The calendar will not update if your timetable changes. Events may show up even on public holidays when classes are not running.**
+> **Events may show up even on public holidays when classes are not running. Check SSO on public holidays to verify. The calendar will not update if your timetable changes.**
 
  ## Steps to create a new calendar in your calendar application
  ### Google Calendar
