@@ -27,7 +27,9 @@ This script fetches data from the timetable on SSO (Student Services Online) and
 0. Please read the `Important` block above. This will NOT work if your timezone is not `Pacific/Auckland` (e.g., you are overseas). Change your device timezone to `Pacific/Auckland`
 1. Go to the ["My Class Timetable" page on SSO](https://www.student.auckland.ac.nz/psc/ps/EMPLOYEE/SA/c/UOA_MENU_FL.UOA_VW_CAL_FL.GBL)
 2. Open the JavaScript Console:
-   - On Google Chrome/Microsoft Edge/Mozilla Firefox: `ctrl` + `shift` + `I`, then click on the `[Console]` tab at the top
+   - On Firefox and forks (e.g. Librewolf, Waterfox, Pale Moon), Chromium and forks (e.g. Chrome, Edge, Brave, Opera):
+     - `ctrl` + `shift` + `I`
+     - Click on the "[Console]" tab at the top
    - On Safari on macOS (unverified; I do not have macOS):
      - You will need to enable the "Develop" menu in the menu bar:
        - `⌘` + `,` to open Safari Preferences, or use the "Safari" Menu
