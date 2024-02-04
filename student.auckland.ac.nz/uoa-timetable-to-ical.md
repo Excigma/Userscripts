@@ -36,7 +36,7 @@ This script fetches data from the timetable on SSO (Student Services Online) and
 3. Copy the code from  [uoa-timetable-to-ical.js](https://github.com/Excigma/Userscripts/blob/trunk/student.auckland.ac.nz/uoa-timetable-to-ical.js)
 4. Paste the code into the console. You may need to allow pasting before your browser allows you to paste code into the console
 5. Press Enter to run the code. You should see the script switching to the "List View" tab, opening "Meeting Information" for each meeting, and finally downloading a file: `uoa-sso-calendar.ics`. The `.ics` file's contents will be logged to the console as well
-6. Note: Importing events from `.ics` files might be a **difficult to reverse action** depending on your calendar application. Read the `Important` block above before importing the `.ics` file. The calendar will not update if your timetable changes.
+6. Note: Importing events from `.ics` files might be a **difficult to reverse action** depending on your calendar application. Read the `Important` block above before importing the `.ics` file. The calendar will not update if your timetable changes. **Events may show up even on public holidays.**
 
 > [!NOTE]
 > This will NOT work if your timezone is not `Pacific/Auckland` (e.g., you are overseas). Change your device timezone to `Pacific/Auckland`
