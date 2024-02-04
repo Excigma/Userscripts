@@ -9,7 +9,7 @@ This script fetches data from the timetable on SSO (Student Services Online) and
 ## Usage
 
 > [!WARNING]
-> ### ⚠️ **Create a new calendar in your calendar application separate from your main calendar.**
+> ### **Create a new calendar in your calendar application separate from your main calendar.**
 > 
 > **This script works differently to UoACal**. The link UoACal gives subscribes you to a seperate calendar, the whole calendar is easily removable.
 >
