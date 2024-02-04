@@ -4,16 +4,19 @@
 // @author       Excigma
 // @namespace    https://excigma.xyz
 // @license      MIT
-// @version      2.0.0
+// @version      2.0.1
 // @match        https://auckland.au.panopto.com/Panopto/Pages/Viewer.aspx
 // @grant        none
 // @run-at       document-end
 // ==/UserScript==
 
-// TODO: Allow user-defined playback speeds
-
 (() => {
-    const PLAYBACK_SPEEDS = [0.8, 1, 1.25, 1.5, 1.75, 2, 2.5, 3];
+    let playbackSpeeds;
+    try {
+        playbackSpeeds = JSON.parse(localStorage.getItem("playbackSpeeds")) ?? [];
+    } catch (_) {
+        playbackSpeeds = []
+    }
 
     const styles = `
         #speedButton {
@@ -51,19 +54,33 @@
             cursor: pointer;
         }
 
-        .speedList > * {
-           width: 80%;
-           padding: 0.5em 10%;
+        .speedList > li {
+            width: 80%;
+            padding: 0.5em 10%;
         }
 
-        .speedList li:hover {
+        .speedList li:hover, .speedList button:hover, .speedList input:focus {
             background-color: rgb(245, 245, 245);
         }
 
-        #customSpeedInput {
+        .speedList > button, .speedList > input {
             border: none;
-            border-top: 1px solid rgb(245, 245, 245);
+            outline: none;
+            text-align: center;
+            width: 100%;
+            padding: 8px 0px;
             color: rgb(98, 98, 98);
+            background-color: rgb(255, 255, 255);
+            border-top: 1px solid rgb(245, 245, 245);
+            border-bottom: 1px solid rgb(245, 245, 245);
+        }
+
+        .speedList > input {
+            font-size: 0.75em;
+        }
+
+        .speedList > button {
+            font-weight: bold;
         }
     `;
 
@@ -85,6 +102,52 @@
     captionsButton.parentNode.insertBefore(speedButton, captionsButton.nextSibling);
     speedButton.appendChild(speedButtonIcon);
 
+    const listTitle = document.createElement("li");
+    listTitle.innerText = "Speed";
+    listTitle.style.fontWeight = "bold";
+    speedList.appendChild(listTitle);
+
+    const speedInput = document.createElement("input");
+    speedInput.id = "speedInput";
+    speedInput.placeholder = "Custom Speed";
+    speedInput.type = "number";
+    speedInput.min = 0.1;
+    speedInput.step = 0.1;
+    speedList.appendChild(speedInput);
+    speedInput.addEventListener("change", () => {
+        changeSpeed(speedInput.value);
+    });
+
+    const saveSpeedButton = document.createElement("button");
+    saveSpeedButton.innerText = "Save Speed";
+    speedList.appendChild(saveSpeedButton);
+    saveSpeedButton.addEventListener("click", () => {
+        const parsedSpeed = speedInput.value;
+        if (isNaN(parsedSpeed) || parsedSpeed <= 0) return;
+        if (playbackSpeeds.includes(parsedSpeed)) return;
+
+        playbackSpeeds.push(parsedSpeed);
+        playbackSpeeds.sort().reverse();
+
+        localStorage.setItem("playbackSpeeds", JSON.stringify(playbackSpeeds));
+        initializeSpeedList();
+    });
+
+    const removeSpeedButton = document.createElement("button");
+    removeSpeedButton.innerText = "Remove Speed";
+    speedList.appendChild(removeSpeedButton);
+    removeSpeedButton.addEventListener("click", () => {
+        const parsedSpeed = speedInput.value;
+        if (isNaN(parsedSpeed) || parsedSpeed <= 0) return;
+
+        const index = playbackSpeeds.indexOf(parsedSpeed);
+        if (index === -1) return;
+
+        playbackSpeeds.splice(index, 1);
+        localStorage.setItem("playbackSpeeds", JSON.stringify(playbackSpeeds));
+        initializeSpeedList();
+    });
+
     speedButtonIcon.addEventListener("click", () => {
         if (speedList.style.transform === "scale(1)") {
             speedList.style.transform = "scale(0)";
@@ -92,37 +155,11 @@
         } else {
             speedList.style.transform = "scale(1)";
             speedList.style.opacity = 1;
+            speedInput.focus();
         }
     });
 
-    const listTitle = document.createElement("li");
-    listTitle.innerText = "Speed";
-    listTitle.style.fontWeight = "bold";
-    speedList.appendChild(listTitle);
-
-    PLAYBACK_SPEEDS.forEach(speed => {
-        const listItem = document.createElement("li");
-        listItem.innerText = `${speed}x`;
-        listItem.addEventListener("click", () => {
-            changeSpeed(speed);
-            speedList.style.transform = "scale(0)";
-            speedList.style.opacity = 0;
-        });
-
-        speedList.appendChild(listItem);
-    });
-
-    const customSpeedInput = document.createElement("input");
-    customSpeedInput.id = "customSpeedInput";
-    customSpeedInput.type = "number";
-    customSpeedInput.min = 0.1;
-    customSpeedInput.step = 0.1;
-    customSpeedInput.placeholder = "Custom Speed";
-    customSpeedInput.addEventListener("change", () => {
-        changeSpeed(customSpeedInput.value);
-    });
-
-    speedList.appendChild(customSpeedInput);
+    initializeSpeedList();
     speedButton.appendChild(speedList);
 
     // Event listener to close the speedList when clicking away or hitting escape
@@ -155,11 +192,31 @@
         if (isNaN(parsedSpeed) || parsedSpeed <= 0) return;
 
         const videoElements = document.getElementsByTagName("video");
-
-        for (let i = 0; i < videoElements.length; i++) {
-            videoElements[i].playbackRate = parsedSpeed;
+        speedInput.value = parsedSpeed;
+        for (const video of videoElements) {
+            video.playbackRate = parsedSpeed;
         }
 
         speedButtonIcon.textContent = `${parsedSpeed}x`;
+    }
+
+    function initializeSpeedList() {
+        // Remove all `li` children from the speedList
+        const listItems = speedList.querySelectorAll("li.speedListItem");
+        listItems.forEach(item => item.remove());
+
+        // Add speeds back
+        playbackSpeeds.forEach(speed => {
+            const listItem = document.createElement("li");
+            listItem.textContent = `${speed}x`;
+            listItem.classList.add("speedListItem");
+            listItem.addEventListener("click", () => {
+                changeSpeed(speed);
+                speedList.style.transform = "scale(0)";
+                speedList.style.opacity = 0;
+            });
+
+            speedList.appendChild(listItem);
+        });
     }
 })();
