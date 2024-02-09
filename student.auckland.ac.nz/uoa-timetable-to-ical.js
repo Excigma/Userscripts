@@ -309,13 +309,13 @@ This script fetches data from the timetable on SSO (Student Services Online) and
 	 * @param {string} time the time string in the format "HH:MMAM/PM"
 	*/
 	function parseDateTime(date, time) {
-		// 16:00
 		const [day, month, year] = date.split("/").map(Number);
 		const [timePart, meridiem] = time.split(/(?=[AP]M)/i);
 		let [hours, minutes] = timePart.split(":").map(Number);
 		const parsedDate = new Date(year, month - 1, day);
 		// Note: month - 1 because month is zero-indexed in JavaScript
 		if (meridiem !== undefined){
+			// Note: meridiem will return undefined if the SSO website displays time in 24 hours.
 			if (meridiem.toLowerCase() === "pm" && hours < 12) {
 				hours += 12;
 			} else if (meridiem.toLowerCase() === "am" && hours === 12) {
