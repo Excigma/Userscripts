@@ -8,12 +8,12 @@ This repo contains a collection of (user) scripts that I've made for various web
 
 Some scripts no longer work because the website they were made for has changed.
 
-## Usage
+## Usage of User Scripts (Files ending with `.user.js`)
 
 > [!NOTE]
-> Some scripts are not a user script and are not intended to by run with a user script manager. Scripts intended to by run in console or some other method will end with `.js` file extension. Scripts intended to be run with a user script manager will end with `.user.js`
->
-> These steps are intended for `.user.js` scripts with a user script manager.
+> _**Some scripts are not a user script and are not intended to by run with a user script manager.**_
+> 
+> Scripts intended to be run with a user script manager will end with `.user.js`. Scripts intended to be run in console or by some other method will end with a `.js` file extension.
 
 Install a user script manager. You have a few options depending on your browser. I do not endorse any of the user script managers here, and I've only tested the script in [Violentmonkey](https://violentmonkey.github.io/).
    - On Firefox (including Firefox on Android!) and forks (e.g. Librewolf, Waterfox, Pale Moon):
