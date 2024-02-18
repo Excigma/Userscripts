@@ -5,10 +5,12 @@
 		"DTSTAMP",
 		"DTSTART",
 		"Ical",
+		"Librewolf",
 		"meridiem",
 		"PRODID",
 		"RRULE",
 		"VCALENDAR",
-		"VEVENT"
+		"VEVENT",
+		"Waterfox"
 	]
 }
