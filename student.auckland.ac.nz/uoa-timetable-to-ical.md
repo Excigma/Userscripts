@@ -28,7 +28,7 @@ This script fetches data from the timetable on SSO (Student Services Online) and
    - On Firefox and forks (e.g. Librewolf, Waterfox, Pale Moon), Chromium and forks (e.g. Chrome, Edge, Brave, Opera):
      - `ctrl` + `shift` + `I`
      - Click on the "[Console]" tab at the top
-   - On Safari on macOS (unverified; I do not have macOS):
+   - On Safari on macOS:
      - You will need to enable the "Develop" menu in the menu bar:
        - `⌘` + `,` to open Safari Preferences, or use the "Safari" Menu
        - Navigate to the "Advanced" tab, find "Show Develop menu in menu bar" and enable this setting
