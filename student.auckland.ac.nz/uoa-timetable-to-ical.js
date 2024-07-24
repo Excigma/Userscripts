@@ -2,6 +2,10 @@
 You can read the below text here: https://github.com/Excigma/Userscripts/blob/trunk/student.auckland.ac.nz/uoa-timetable-to-ical.md
 
 # UoA SSO Timetable to iCalendar
+> [!NOTE]
+> UoA has launched their successor for UoACal here: [https://mytimetable.auckland.ac.nz/](https://mytimetable.auckland.ac.nz/).
+> You probably don't need to bother with this script anymore and I'll probably stop maintaining it, so it'll stop working at some point in the future.
+
 This script fetches data from the timetable on SSO (Student Services Online) and converts it into `.ics` format. This script was written as UoA decommissioned UoACal with zero notice and has yet to communicate when a replacement service would be available.
 
 > [!CAUTION]
@@ -29,13 +33,13 @@ This script fetches data from the timetable on SSO (Student Services Online) and
 1. Go to the ["My Class Timetable" page on SSO](https://www.student.auckland.ac.nz/psc/ps/EMPLOYEE/SA/c/UOA_MENU_FL.UOA_VW_CAL_FL.GBL)
 2. Open the JavaScript Console:
    - On Firefox and forks (e.g. Librewolf, Waterfox, Pale Moon), Chromium and forks (e.g. Chrome, Edge, Brave, Opera):
-	 - `ctrl` + `shift` + `I`
-	 - Click on the "[Console]" tab at the top
-   - On Safari on macOS (unverified; I do not have macOS):
-	 - You will need to enable the "Develop" menu in the menu bar:
-	   - `⌘` + `,` to open Safari Preferences, or use the "Safari" Menu
-	   - Navigate to the "Advanced" tab, find "Show Develop menu in menu bar" and enable this setting
-	 - `Option` + `⌘` + `C` to open the JavaScript Console, or use the "Show JavaScript Console" in the "Develop" menu
+     - `ctrl` + `shift` + `I`
+     - Click on the "[Console]" tab at the top
+   - On Safari on macOS:
+     - You will need to enable the "Develop" menu in the menu bar:
+       - `⌘` + `,` to open Safari Preferences, or use the "Safari" Menu
+       - Navigate to the "Advanced" tab, find "Show Develop menu in menu bar" and enable this setting
+     - `Option` + `⌘` + `C` to open the JavaScript Console, or use the "Show JavaScript Console" in the "Develop" menu
 3. Copy the code from  [uoa-timetable-to-ical.js](https://github.com/Excigma/Userscripts/blob/trunk/student.auckland.ac.nz/uoa-timetable-to-ical.js)
 4. Paste the code into the console. You may need to allow pasting before your browser allows you to paste code into the console
 5. Press Enter to run the code. You should see the script switching to the "List View" tab, opening "Meeting Information" for each meeting, and finally downloading a file: `uoa-sso-calendar.ics`. The `.ics` file's contents will be logged to the console as well
@@ -68,6 +72,7 @@ This script fetches data from the timetable on SSO (Student Services Online) and
 ...feel free to contribute steps for your favorite calendar application
 
 ## Credits
+- [@Stefan](https://github.com/histefanhere) for contributing a fix for shifts in events caused by daylight savings
 - [@Silverarmor](https://github.com/Silverarmor) for sharing places with timetable data and ideas how to parse it - the method that this script works is based on his ideas
 - [@BirdMakingStuff](https://github.com/BirdMakingStuff) for testing early revisions of the script reporting bugs, and providing fixes
 - [@tash192dev](https://github.com/tash192dev) for providing examples of the `.ics` format, allowing me to fix time zone/date-related issues
@@ -120,6 +125,8 @@ This script fetches data from the timetable on SSO (Student Services Online) and
 	// Helper functions
 	/** Converts a javascript Date object into an iCal date-time string in the format of `YYYYMMDDTHHMMSSZ` */
 	const toIcalDate = (date) => date.toISOString().replace(/[:\-]/g, '').split('.')[0] + 'Z';
+	/** Format YYYYMMDDTHHMMSS in local NZ time */
+	const toIcalDateTZ = (date) => date.toLocaleString('sv').replace(/[:\-]/g, '').replace(' ', 'T');
 	/** Removes duplicate whitespace in between and at ends of words */
 	const trimText = (text) => (text?.textContent ?? text)?.trim()?.replaceAll(/[^\S\r\n]+/g, " ");
 
@@ -150,8 +157,24 @@ This script fetches data from the timetable on SSO (Student Services Online) and
 		`CREATED:${currentDate}`,
 		`LAST-MODIFIED:${currentDate}`,
 		`SEQUENCE:${Math.floor(Date.now() / 1000)}`,
-		"METHOD:PUBLISH"
+		"METHOD:PUBLISH",
+		"BEGIN:VTIMEZONE",
+		"TZID:New Zealand Standard Time",
+		"BEGIN:STANDARD",
+		"DTSTART:16010101T030000",
+		"TZOFFSETFROM:+1300",
+		"TZOFFSETTO:+1200",
+		"RRULE:FREQ=YEARLY;INTERVAL=1;BYDAY=1SU;BYMONTH=4",
+		"END:STANDARD",
+		"BEGIN:DAYLIGHT",
+		"DTSTART:16010101T020000",
+		"TZOFFSETFROM:+1200",
+		"TZOFFSETTO:+1300",
+		"RRULE:FREQ=YEARLY;INTERVAL=1;BYDAY=-1SU;BYMONTH=9",
+		"END:DAYLIGHT",
+		"END:VTIMEZONE"
 	];
+
 
 	// Loop through each "Class" in the "List View" timetable
 	for (const timetableRow of document.querySelectorAll(TIMETABLE_ROW_SELECTOR)) {
@@ -219,8 +242,8 @@ This script fetches data from the timetable on SSO (Student Services Online) and
 				`SUMMARY:${summary}`,
 				`DESCRIPTION:${description}`,
 				`DTSTAMP:${currentDate}`,
-				`DTSTART:${toIcalDate(dtstart)}`,
-				`DTEND:${toIcalDate(dtend)}`,
+				`DTSTART;TZID=New Zealand Standard Time:${toIcalDateTZ(dtstart)}`,
+				`DTEND;TZID=New Zealand Standard Time:${toIcalDateTZ(dtend)}`,
 				`LOCATION:${roomMapping[location] ?? location}`,
 				// BYDAY=${meeting.rrule.byDay}; // Excluded because it messes up the days events are on?
 				`RRULE:FREQ=WEEKLY;UNTIL=${toIcalDate(until)}`,

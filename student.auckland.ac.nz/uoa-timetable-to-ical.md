@@ -69,6 +69,7 @@ This script fetches data from the timetable on SSO (Student Services Online) and
 ...feel free to contribute steps for your favorite calendar application
 
 ## Credits
+- [@Stefan](https://github.com/histefanhere) for contributing a fix for shifts in events caused by daylight savings
 - [@Silverarmor](https://github.com/Silverarmor) for sharing places with timetable data and ideas how to parse it - the method that this script works is based on his ideas
 - [@BirdMakingStuff](https://github.com/BirdMakingStuff) for testing early revisions of the script reporting bugs, and providing fixes
 - [@tash192dev](https://github.com/tash192dev) for providing examples of the `.ics` format, allowing me to fix time zone/date-related issues
