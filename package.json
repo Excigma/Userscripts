@@ -1,0 +1,11 @@
+{
+  "name": "scripts",
+  "version": "1.0.0",
+  "description": "This repo contains a collection of (user) scripts that I've made for various websites. Most of them are written in JavaScript and are meant to be used with the [Violentmonkey](https://violentmonkey.github.io/) browser extension. The scripts are meant to automate, simplify, or otherwise improve the user experience of the websites they are made for.",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
