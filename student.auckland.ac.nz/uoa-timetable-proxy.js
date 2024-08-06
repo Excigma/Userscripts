@@ -16,8 +16,6 @@ export default {
 
 	async fetch(request, env, ctx) {
 		try {
-
-
 			const url = new URL(request.url);
 
 			const help = `Please insert the ics URL from mytimetable as the \`calendar\` url search parameter.
