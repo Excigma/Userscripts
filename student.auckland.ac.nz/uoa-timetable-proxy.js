@@ -24,6 +24,8 @@ ${url.origin}/?calendar=https://example.com/calendar.ics
 
 Please note that your calendar may contain personal information. Logs from Cloudflare may be collected for purely debugging purposes.
 
+Please note that this script may break if the format of the .ics file from mytimetable/Publish changes. This will cause your timetable to stop syncing, but it may not be apparent.
+
 For advanced users, you can (MAYBE) additionally change the summary and location template returned by using \`summaryTemplate\` and \`locationTemplate\` respectively.
 The information in the template need to exist in the summary field with the ugly block of text
 Some examples (as of Aug 5, 2024):
