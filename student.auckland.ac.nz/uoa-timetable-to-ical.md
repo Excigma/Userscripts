@@ -1,6 +1,10 @@
 # UoA SSO Timetable to iCalendar
+
 > [!NOTE]
-> UoA has launched their successor for UoACal here: [https://mytimetable.auckland.ac.nz/](https://mytimetable.auckland.ac.nz/).
+> `[Feb 2025]`: Looks like https://mytimetable.auckland.ac.nz/ does not show anything for Semester 1, 2025 right now. Perhaps it's stuck on summer school? If you got the URL last year whilst it was working, the timetable.ics link still seems to work. Perhaps this script is relevant again. Sigh.
+
+> [!NOTE]
+> `[Jun 2024]`: UoA has launched their successor for UoACal here: [https://mytimetable.auckland.ac.nz/](https://mytimetable.auckland.ac.nz/).
 > You probably don't need to bother with this script anymore and I'll probably stop maintaining it, so it'll stop working at some point in the future.
 
 This script fetches data from the timetable on SSO (Student Services Online) and converts it into `.ics` format. This script was written as UoA decommissioned UoACal with zero notice and has yet to communicate when a replacement service would be available.
