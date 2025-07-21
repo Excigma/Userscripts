@@ -4,7 +4,6 @@ You can read the below text here: https://github.com/Excigma/Userscripts/blob/tr
 # UoA SSO Timetable to iCalendar
 > [!NOTE]
 > UoA has launched their successor for UoACal here: [https://mytimetable.auckland.ac.nz/](https://mytimetable.auckland.ac.nz/).
-> You probably don't need to bother with this script anymore and I'll probably stop maintaining it, so it'll stop working at some point in the future.
 
 This script fetches data from the timetable on SSO (Student Services Online) and converts it into `.ics` format. This script was written as UoA decommissioned UoACal with zero notice and has yet to communicate when a replacement service would be available.
 
