@@ -57,10 +57,20 @@ I haven't tested this yet. No clue if it actually works.
 		// Matches an event in the iCalendar file.
 		return icsString.replace(/BEGIN:VEVENT([\s\S]*?)END:VEVENT/gm, (event) => {
 			const description = event.match(this.buildFieldRegex("DESCRIPTION"))?.[1];
+			const prevSummary = event.match(this.buildFieldRegex("SUMMARY"))?.[1];
 			const parsed = this.parseDescription(description);
 
 			// Can't find the description field, return the event as is
 			if (description === undefined) return event;
+
+			// Extract module code from SUMMARY (everything before the first /)
+
+			if (prevSummary) {
+				const moduleCode = prevSummary.split("/")[0].trim();
+				if (/\b[A-Z]+\s\d{3}\b/.test(moduleCode)) {
+					parsed.set("moduleusertext2", moduleCode);
+				}
+			}
 
 			// Keys from the DESCRIPTION to be used to replace the SUMMARY/LOCATION field
 			const summaryTemplate = this.defaultSummaryTemplate;
