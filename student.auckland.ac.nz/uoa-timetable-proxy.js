@@ -66,6 +66,10 @@ I haven't tested this yet. No clue if it actually works.
 			// Extract module code from SUMMARY (everything before the first /)
 
 			if (prevSummary) {
+				// Some courses have multiple course codes. We'll just use the first one here.
+				// Sometimes the number is the same, but the subject is different
+				// Sometimes the subject and number are both different
+				// It's not really worth the space to use it up. If someone does get annoyed, then I can look into it. IMO being able to see the number is more important than the subject.
 				const moduleCode = prevSummary.split("/")[0].trim();
 				if (/\b[A-Z]+\s\d{3}[A-Z]?\b/.test(moduleCode)) {
 					parsed.set("moduleusertext2", moduleCode);
