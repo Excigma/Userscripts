@@ -67,7 +67,7 @@ I haven't tested this yet. No clue if it actually works.
 
 			if (prevSummary) {
 				const moduleCode = prevSummary.split("/")[0].trim();
-				if (/\b[A-Z]+\s\d{3}\b/.test(moduleCode)) {
+				if (/\b[A-Z]+\s\d{3}[A-Z]?\b/.test(moduleCode)) {
 					parsed.set("moduleusertext2", moduleCode);
 				}
 			}
