@@ -35,7 +35,7 @@ This script fetches data from the timetable on SSO (Student Services Online) and
 > Use at your own risk. Verify the calendar is correct before confirming the import into your calendar application.
 
 0. Please read the `Important` block above. This will NOT work if your time zone is not `Pacific/Auckland` (e.g., you are overseas). Change your device time zone to `Pacific/Auckland`
-1. Go to the ["My Class Timetable" page on SSO](https://www.student.auckland.ac.nz/psc/ps/EMPLOYEE/SA/c/UOA_MENU_FL.UOA_VW_CAL_FL.GBL)
+1. Go to the ["My Class Timetable" page on SSO](https://www.student.auckland.ac.nz/psc/ps/EMPLOYEE/SA/c/UOA_MENU_FL.UOA_VW_CAL_FL.GBL) and select the correct semeseter
 2. Open the JavaScript Console:
    - On Firefox and forks (e.g. Librewolf, Waterfox, Pale Moon), Chromium and forks (e.g. Chrome, Edge, Brave, Opera):
      - `ctrl` + `shift` + `I`
