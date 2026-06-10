@@ -82,11 +82,24 @@ This script fetches data from the timetable on SSO (Student Services Online) and
 
 	// Meeting Information related
 	/** This maps the "Component" field in the timetable to the iCalendar entry like UoACal did */
+	// https://www.auckland.ac.nz/en/staff/education-office/student-voice-surveys/course-evaluations-set/set-course-and-teaching-evaluations/graded-components.html
+	// https://uoa.custhelp.com/app/answers/detail/a_id/3330/~/class-types-and-descriptions
+	// Note: Scraped June 2026 from course schedule for full list of SSO/CS9 naming convention.
 	const COMPONENT_MAPPING = {
 		"lecture": "",
+		"seminar": "SEM",
 		"tutorial": "TUT",
 		"laboratory": "LAB",
-		"workshop": "WRK"
+		"studio": "STU",
+		"online": "ONL",
+		"team based learning": "TBL",
+		"workshop": "WRK",
+		"field studies": "FLD",
+		"clinic": "CLN",
+		"independent study": "IND",
+		"thesis research": "THE",
+		"supervision": "SUP",
+		"practicum": "PRA",
 	}
 	/** "COMPSYS  305 Digital Systems Design" */
 	const MEETING_NUMBER_ID = "DERIVED_SSR_FL_SSR_SBJ_CAT_NBR";
