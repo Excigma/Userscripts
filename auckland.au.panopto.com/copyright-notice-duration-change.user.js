@@ -11,4 +11,5 @@
 // ==/UserScript==
 
 
-window.Panopto.viewer.copyrightNoticeAutoDismissDuration = 20; // change this to whatever seconds you want
+// window.Panopto.viewer.showCopyrightNotice = true;
+window.Panopto.viewer.showCopyrightNotice = false;
