@@ -12,26 +12,26 @@ Some scripts no longer work because the website they were made for has changed.
 
 > [!NOTE]
 > _**Some scripts are not a user script and are not intended to by run with a user script manager.**_
-> 
+>
 > Scripts intended to be run with a user script manager will end with `.user.js`. Scripts intended to be run in console or by some other method will end with a `.js` file extension.
 
 Install a user script manager. You have a few options depending on your browser. I do not endorse any of the user script managers here, and I've only tested the script in [Violentmonkey](https://violentmonkey.github.io/).
-   - On Firefox (including Firefox on Android!) and forks (e.g. Librewolf, Waterfox, Pale Moon):
-     -  [Violentmonkey](https://violentmonkey.github.io/): [[Firefox Addons](https://addons.mozilla.org/en-US/firefox/addon/violentmonkey/)] [[GitHub Releases](https://github.com/violentmonkey/violentmonkey/releases)] [[Source](https://github.com/violentmonkey/violentmonkey)]
-     - [Greasemonkey](https://www.greasespot.net/): [[Firefox Addons](https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/)] [[Source](https://github.com/greasemonkey/greasemonkey/)]
-     -  [Tampermonkey](https://www.tampermonkey.net/): [[Firefox Addons](https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/)]
-   - On Chromium and forks (e.g. Chrome, Edge, Brave, Opera):
-     -  [Violentmonkey](https://violentmonkey.github.io/): [[Chrome Web Store](https://chromewebstore.google.com/detail/violentmonkey/jinjaccalgkegednnccohejagnlnfdag)] [[GitHub Releases](https://github.com/violentmonkey/violentmonkey/releases)] [[Source](https://github.com/violentmonkey/violentmonkey)]
-     -  [Tampermonkey](https://www.tampermonkey.net/): [[Chrome Web Store](https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)]
-   - On Edge:
-     -  [Violentmonkey](https://violentmonkey.github.io/): [[Microsoft Edge Addons](https://microsoftedge.microsoft.com/addons/detail/eeagobfjdenkkddmbclomhiblgggliao)] [[GitHub Releases](https://github.com/violentmonkey/violentmonkey/releases)] [[Source](https://github.com/violentmonkey/violentmonkey)]
-     -  [Tampermonkey](https://www.tampermonkey.net/): [[Microsoft Edge Addons](https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd)]
-   - On Opera:
-     -  [Tampermonkey Beta](https://www.tampermonkey.net/): [[Opera Addons](https://addons.opera.com/en/extensions/details/tampermonkey-beta/)]
-   - On Safari (unverified; I do not have macOS):
-     - Userscripts [[App Store](https://apps.apple.com/xk/app/userscripts/id1463298887)] [[Source](https://github.com/quoid/userscripts)]
-     - Tampermonkey [[App Store](https://apps.apple.com/us/app/tampermonkey/id1482490089)]
 
+- On Firefox (including Firefox on Android!) and forks (e.g. Librewolf, Waterfox, Pale Moon):
+  - [Violentmonkey](https://violentmonkey.github.io/): [[Firefox Addons](https://addons.mozilla.org/en-US/firefox/addon/violentmonkey/)] [[GitHub Releases](https://github.com/violentmonkey/violentmonkey/releases)] [[Source](https://github.com/violentmonkey/violentmonkey)]
+  - [Greasemonkey](https://www.greasespot.net/): [[Firefox Addons](https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/)] [[Source](https://github.com/greasemonkey/greasemonkey/)]
+  - [Tampermonkey](https://www.tampermonkey.net/): [[Firefox Addons](https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/)]
+- On Chromium and forks (e.g. Chrome, Edge, Brave, Opera):
+  - [Violentmonkey](https://violentmonkey.github.io/): [[Chrome Web Store](https://chromewebstore.google.com/detail/violentmonkey/jinjaccalgkegednnccohejagnlnfdag)] [[GitHub Releases](https://github.com/violentmonkey/violentmonkey/releases)] [[Source](https://github.com/violentmonkey/violentmonkey)]
+  - [Tampermonkey](https://www.tampermonkey.net/): [[Chrome Web Store](https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)]
+- On Edge:
+  - [Violentmonkey](https://violentmonkey.github.io/): [[Microsoft Edge Addons](https://microsoftedge.microsoft.com/addons/detail/eeagobfjdenkkddmbclomhiblgggliao)] [[GitHub Releases](https://github.com/violentmonkey/violentmonkey/releases)] [[Source](https://github.com/violentmonkey/violentmonkey)]
+  - [Tampermonkey](https://www.tampermonkey.net/): [[Microsoft Edge Addons](https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd)]
+- On Opera:
+  - [Tampermonkey Beta](https://www.tampermonkey.net/): [[Opera Addons](https://addons.opera.com/en/extensions/details/tampermonkey-beta/)]
+- On Safari (unverified; I do not have macOS):
+  - Userscripts [[App Store](https://apps.apple.com/xk/app/userscripts/id1463298887)] [[Source](https://github.com/quoid/userscripts)]
+  - Tampermonkey [[App Store](https://apps.apple.com/us/app/tampermonkey/id1482490089)]
 
 Create a new script, remove the default code, and paste the code from the `.user.js` file into the script editor and save the script.
 
